@@ -572,6 +572,53 @@
         page-break-inside: avoid;
       }
     }
+
+    /* Tabela mobile em formato de cartões (sem scroll horizontal) */
+    @media (max-width: 768px) {
+      .table-wrapper {
+        overflow-x: hidden;
+      }
+
+      table,
+      thead,
+      tbody,
+      th,
+      td,
+      tr {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tbody tr {
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(229, 231, 235, 1);
+        background: #ffffff;
+      }
+
+      td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 6px 10px;
+        white-space: normal;
+      }
+
+      td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        margin-right: 8px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.72rem;
+      }
+
+      .col-desc {
+        font-weight: 500;
+      }
+    }
   </style>
 </head>
 <body>
@@ -774,10 +821,10 @@
 
       data.forEach(row => {
         html += '<tr>';
-        html += `<td class="col-desc">${row['Descrição'] || ''}</td>`;
-        html += `<td class="col-number">${row['RS Atual'] || ''}</td>`;
-        html += `<td class="col-number">${row['Qtd Saídas'] || ''}</td>`;
-        html += `<td class="col-number">${row['Vlr Saídas'] || ''}</td>`;
+        html += `<td class="col-desc" data-label="Descrição">${row['Descrição'] || ''}</td>`;
+        html += `<td class="col-number" data-label="Valor de Venda">${row['RS Atual'] || ''}</td>`;
+        html += `<td class="col-number" data-label="Qtd Saídas">${row['Qtd Saídas'] || ''}</td>`;
+        html += `<td class="col-number" data-label="Subtotal R$">${row['Vlr Saídas'] || ''}</td>`;
         html += '</tr>';
       });
 
@@ -970,6 +1017,7 @@
   </script>
 </body>
 </html>
+
 
 
 
