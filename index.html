@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Relatório de Vendas - CSV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonte moderna -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- PapaParse para ler CSV (não precisa instalar nada, só este script externo) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --bg-card: #ffffff;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+      --accent-strong: rgba(37, 99, 235, 0.16);
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --border-soft: rgba(148, 163, 184, 0.6);
+      --danger: #dc2626;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #e5e7eb 0, #f9fafb 60%, #e5e7eb 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1200px;
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow:
+        0 18px 40px rgba(15, 23, 42, 0.08),
+        0 0 0 1px rgba(148, 163, 184, 0.25);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(to right, #eff6ff, #ffffff);
+    }
+
+    .title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-dot {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #bfdbfe, #2563eb 45%, #1d4ed8 80%);
+      box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.2),
+        0 0 18px rgba(37, 99, 235, 0.4);
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .month-badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ffffff;
+    }
+
+    .month-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 500px;
+      background: #f3f4f6;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sidebar {
+      padding: 20px;
+      border-right: 1px solid rgba(148, 163, 184, 0.3);
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .month-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .month-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.18s ease-out;
+    }
+
+    .month-btn span.label {
+      font-weight: 500;
+    }
+
+    .month-btn span.sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .month-btn:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-strong), 0 6px 14px rgba(15, 23, 42, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .month-btn.active {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-color: #1d4ed8;
+      box-shadow:
+        0 0 0 1px rgba(37, 99, 235, 0.5),
+        0 10px 22px rgba(37, 99, 235, 0.35);
+      color: #ffffff;
+    }
+
+    .month-btn.active span.sub {
+      color: #e5e7eb;
+    }
+
+    .hint {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #eff6ff;
+      border: 1px dashed rgba(148, 163, 184, 0.9);
+    }
+
+    .content {
+      padding: 18px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .content-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .content-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .content-title h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .content-title p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .kpi-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .kpi {
+      min-width: 120px;
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kpi-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .kpi-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .table-card {
+      margin-top: 4px;
+      flex: 1;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: #ffffff;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-header {
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f9fafb;
+    }
+
+    .table-header span.badge {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: #ffffff;
+    }
+
+    .table-wrapper {
+      position: relative;
+      overflow: auto;
+      max-height: 460px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: #f9fafb;
+      box-shadow: 0 1px 0 rgba(148, 163, 184, 0.7);
+    }
+
+    th, td {
+      padding: 8px 10px;
+      white-space: nowrap;
+      border-bottom: 1px solid rgba(229, 231, 235, 1);
+    }
+
+    th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    tbody tr:hover {
+      background: var(--accent-soft);
+    }
+
+    .col-desc {
+      max-width: 380px;
+      white-space: normal;
+    }
+
+    .col-number {
+      text-align: right;
+      font-feature-settings: "tnum" 1, "lnum" 1;
+    }
+
+    .status-bar {
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-top: 1px solid rgba(229, 231, 235, 1);
+      background: #f9fafb;
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    .loading {
+      font-style: italic;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="title-area">
+        <div class="logo-dot"></div>
+        <div>
+          <h1>Relatório de Vendas</h1>
+          <p class="subtitle">Relatórios em CSV · Setembro a Novembro</p>
+        </div>
+      </div>
+      <div class="month-badge" id="badge-mes">
+        <span class="month-dot"></span>
+        <span>Mês selecionado: <strong>—</strong></span>
+      </div>
+    </header>
+
+    <main>
+      <aside class="sidebar">
+        <div>
+          <p class="section-title">Meses</p>
+          <div class="month-buttons">
+            <button class="month-btn active" data-month="setembro" data-label="Setembro">
+              <span class="label">Setembro</span>
+              <span class="sub">setembro.csv</span>
+            </button>
+            <button class="month-btn" data-month="outubro" data-label="Outubro">
+              <span class="label">Outubro</span>
+              <span class="sub">outubro.csv</span>
+            </button>
+            <button class="month-btn" data-month="novembro" data-label="Novembro">
+              <span class="label">Novembro</span>
+              <span class="sub">novembro.csv</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="hint">
+          Coloque este HTML na mesma pasta que
+          <code>setembro.csv</code>, <code>outubro.csv</code> e <code>novembro.csv</code>.  
+          Ao clicar em um mês, o navegador faz <code>fetch()</code> do CSV correspondente.
+        </div>
+      </aside>
+
+      <section class="content">
+        <div class="content-header">
+          <div class="content-title">
+            <h2 id="titulo-mes">Relatório de Setembro</h2>
+            <p>Visualização do relatório de vendas para o mês selecionado.</p>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi">
+              <span class="kpi-label">Itens</span>
+              <span class="kpi-value" id="kpi-itens">—</span>
+            </div>
+            <div class="kpi">
+              <span class="kpi-label">Qtd. Total Saídas</span>
+              <span class="kpi-value" id="kpi-qtd">—</span>
+            </div>
+            <div class="kpi">
+              <span class="kpi-label">Total Vendas (R$)</span>
+              <span class="kpi-value" id="kpi-vlr">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <span>Relatório detalhado por produto</span>
+            <span class="badge" id="badge-linhas">0 linhas</span>
+          </div>
+          <div class="table-wrapper" id="table-container">
+            <div style="padding: 14px;" class="loading">
+              Carregando dados de setembro...
+            </div>
+          </div>
+          <div class="status-bar" id="status-bar">
+            <span>Pronto.</span>
+            <span>Esperado: "Descrição", "Qtd Saídas", "Vlr Saídas", "RS Atual".</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Mapeamento "mês -> arquivo CSV" na MESMA pasta do HTML
+    const monthFiles = {
+      setembro: 'setembro.csv',
+      outubro: 'outubro.csv',
+      novembro: 'novembro.csv'
+    };
+
+    const monthButtons = document.querySelectorAll('.month-btn');
+    const badgeMes = document.getElementById('badge-mes').querySelector('strong');
+    const tituloMes = document.getElementById('titulo-mes');
+    const tableContainer = document.getElementById('table-container');
+    const statusBar = document.getElementById('status-bar');
+    const badgeLinhas = document.getElementById('badge-linhas');
+
+    const kpiItens = document.getElementById('kpi-itens');
+    const kpiQtd = document.getElementById('kpi-qtd');
+    const kpiVlr = document.getElementById('kpi-vlr');
+
+    function formatNumberBr(value) {
+      if (value === null || value === undefined || value === '') return '0,00';
+      const num = typeof value === 'number'
+        ? value
+        : parseFloat(String(value).replace('.', '').replace(',', '.'));
+      if (isNaN(num)) return String(value);
+      return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function updateKPIs(data) {
+      const linhasValidas = data.filter(row =>
+        row['Qtd Saídas'] && row['Vlr Saídas']
+      );
+
+      const totalItens = linhasValidas.length;
+      let somaQtd = 0;
+      let somaVlr = 0;
+
+      linhasValidas.forEach(row => {
+        const qtd = parseFloat(String(row['Qtd Saídas']).replace('.', '').replace(',', '.')) || 0;
+        const vlr = parseFloat(String(row['Vlr Saídas']).replace('.', '').replace(',', '.')) || 0;
+        somaQtd += qtd;
+        somaVlr += vlr;
+      });
+
+      kpiItens.textContent = totalItens.toLocaleString('pt-BR');
+      kpiQtd.textContent = formatNumberBr(somaQtd);
+      kpiVlr.textContent = formatNumberBr(somaVlr);
+    }
+
+    function renderTable(data) {
+      if (!data || !data.length) {
+        tableContainer.innerHTML = '<div style="padding: 14px;">Nenhum dado encontrado neste arquivo.</div>';
+        badgeLinhas.textContent = '0 linhas';
+        updateKPIs([]);
+        return;
+      }
+
+      const headers = ['Descrição', 'Qtd Saídas', 'Vlr Saídas', 'RS Atual'];
+
+      let html = '<table><thead><tr>';
+      headers.forEach(h => {
+        html += `<th>${h}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+
+      data.forEach(row => {
+        html += '<tr>';
+        html += `<td class="col-desc">${row['Descrição'] || ''}</td>`;
+        html += `<td class="col-number">${row['Qtd Saídas'] || ''}</td>`;
+        html += `<td class="col-number">${row['Vlr Saídas'] || ''}</td>`;
+        html += `<td class="col-number">${row['RS Atual'] || ''}</td>`;
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      tableContainer.innerHTML = html;
+      badgeLinhas.textContent = `${data.length} linhas`;
+      updateKPIs(data);
+    }
+
+    async function loadMonth(monthKey, label) {
+      const file = monthFiles[monthKey];
+      if (!file) return;
+
+      monthButtons.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.month === monthKey);
+      });
+
+      badgeMes.textContent = label;
+      tituloMes.textContent = `Relatório de ${label}`;
+      statusBar.innerHTML =
+        `<span class="loading">Carregando arquivo ${file} via fetch()...</span><span></span>`;
+      tableContainer.innerHTML =
+        '<div style="padding: 14px;" class="loading">Carregando dados...</div>';
+
+      try {
+        // Leitura via fetch() diretamente do navegador
+        const response = await fetch(file);
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status);
+        }
+
+        const csvText = await response.text();
+        const results = Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: 'greedy'
+        });
+
+        if (results.errors && results.errors.length) {
+          statusBar.innerHTML =
+            '<span class="status-error">Erro ao processar o arquivo CSV.</span>' +
+            `<span>Confira o separador e o encoding de <code>${file}</code>.</span>`;
+        } else {
+          statusBar.innerHTML =
+            `<span>Arquivo <strong>${file}</strong> carregado com sucesso via fetch().</span>` +
+            '<span>Role para ver todos os dados.</span>';
+        }
+
+        renderTable(results.data || []);
+      } catch (e) {
+        console.error(e);
+        statusBar.innerHTML =
+          '<span class="status-error">Falha ao carregar o arquivo com fetch().</span>' +
+          `<span>Verifique se <code>${file}</code> está na mesma pasta e se o navegador permite leitura local.</span>`;
+        tableContainer.innerHTML =
+          '<div style="padding: 14px;">Não foi possível carregar o arquivo CSV.</div>';
+      }
+    }
+
+    monthButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const monthKey = btn.dataset.month;
+        const label = btn.dataset.label;
+        loadMonth(monthKey, label);
+      });
+    });
+
+    // Carrega Setembro automaticamente ao abrir
+    window.addEventListener('DOMContentLoaded', () => {
+      loadMonth('setembro', 'Setembro');
+    });
+  </script>
+</body>
+</html>
