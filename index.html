@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-  <!-- PapaParse para ler CSV (não precisa instalar nada, só este script externo) -->
+  <!-- PapaParse para ler CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
@@ -367,6 +367,52 @@
       font-style: italic;
       color: var(--text-muted);
     }
+
+    /* Relatórios adicionais */
+
+    .summary-section {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .summary-card {
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: #ffffff;
+      padding: 10px 12px 8px;
+    }
+
+    .summary-header {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #111827;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid rgba(229, 231, 235, 1);
+      white-space: nowrap;
+    }
+
+    .summary-table th {
+      text-align: left;
+      color: #6b7280;
+      font-weight: 600;
+    }
+
+    .summary-table td.col-number {
+      text-align: right;
+    }
   </style>
 </head>
 <body>
@@ -407,8 +453,16 @@
 
         <div class="hint">
           Coloque este HTML na mesma pasta que
-          <code>setembro.csv</code>, <code>outubro.csv</code> e <code>novembro.csv</code>.  
+          <code>setembro.csv</code>, <code>outubro.csv</code> e <code>novembro.csv</code>.
           Ao clicar em um mês, o navegador faz <code>fetch()</code> do CSV correspondente.
+        </div>
+
+        <div>
+          <p class="section-title">Filtro de saída</p>
+          <button id="btn-filter" class="month-btn" type="button">
+            <span class="label" id="filter-label">Mostrando: todos</span>
+            <span class="sub">Clique para alternar</span>
+          </button>
         </div>
       </aside>
 
@@ -449,19 +503,42 @@
             <span>Esperado: "Descrição", "Qtd Saídas", "Vlr Saídas", "RS Atual".</span>
           </div>
         </div>
+
+        <!-- Relatórios adicionais -->
+        <section class="summary-section">
+          <div class="summary-card">
+            <h3 class="summary-header">10 produtos mais vendidos em valor</h3>
+            <div class="summary-body" id="top-valor"></div>
+          </div>
+
+          <div class="summary-card">
+            <h3 class="summary-header">10 produtos mais vendidos em quantidade</h3>
+            <div class="summary-body" id="top-qtd"></div>
+          </div>
+
+          <div class="summary-card">
+            <h3 class="summary-header">10 produtos menos vendidos em valor</h3>
+            <div class="summary-body" id="bottom-valor"></div>
+          </div>
+
+          <div class="summary-card">
+            <h3 class="summary-header">10 produtos menos vendidos em quantidade</h3>
+            <div class="summary-body" id="bottom-qtd"></div>
+          </div>
+        </section>
       </section>
     </main>
   </div>
 
   <script>
-    // Mapeamento "mês -> arquivo CSV" na MESMA pasta do HTML
+    // Mapeamento "mês -> arquivo CSV" na mesma pasta do HTML
     const monthFiles = {
       setembro: 'setembro.csv',
       outubro: 'outubro.csv',
       novembro: 'novembro.csv'
     };
 
-    const monthButtons = document.querySelectorAll('.month-btn');
+    const monthButtons = document.querySelectorAll('.month-btn[data-month]');
     const badgeMes = document.getElementById('badge-mes').querySelector('strong');
     const tituloMes = document.getElementById('titulo-mes');
     const tableContainer = document.getElementById('table-container');
@@ -472,12 +549,24 @@
     const kpiQtd = document.getElementById('kpi-qtd');
     const kpiVlr = document.getElementById('kpi-vlr');
 
+    // Botão de filtro
+    const filterButton = document.getElementById('btn-filter');
+    const filterLabel = document.getElementById('filter-label');
+    // modos: 'all' | 'with-sales' | 'no-sales'
+    let currentFilterMode = 'all';
+
+    // Dados do mês carregado (todos os produtos)
+    let fullData = [];
+
+    function parseBrNumber(value) {
+      if (value === null || value === undefined || value === '') return 0;
+      if (typeof value === 'number') return value;
+      const num = parseFloat(String(value).replace(/\./g, '').replace(',', '.'));
+      return isNaN(num) ? 0 : num;
+    }
+
     function formatNumberBr(value) {
-      if (value === null || value === undefined || value === '') return '0,00';
-      const num = typeof value === 'number'
-        ? value
-        : parseFloat(String(value).replace('.', '').replace(',', '.'));
-      if (isNaN(num)) return String(value);
+      const num = typeof value === 'number' ? value : parseBrNumber(value);
       return num.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
@@ -491,8 +580,8 @@
       let somaVlr = 0;
 
       linhasValidas.forEach(row => {
-        const qtd = parseFloat(String(row['Qtd Saídas']).replace('.', '').replace(',', '.')) || 0;
-        const vlr = parseFloat(String(row['Vlr Saídas']).replace('.', '').replace(',', '.')) || 0;
+        const qtd = parseBrNumber(row['Qtd Saídas']);
+        const vlr = parseBrNumber(row['Vlr Saídas']);
         somaQtd += qtd;
         somaVlr += vlr;
       });
@@ -533,14 +622,114 @@
       updateKPIs(data);
     }
 
+    // Aplica o filtro de saída sobre fullData e atualiza a tabela/KPIs
+    function applyFilterAndRender() {
+      let dataToShow = fullData;
+
+      if (currentFilterMode === 'with-sales') {
+        dataToShow = fullData.filter(row => {
+          const qtd = parseBrNumber(row['Qtd Saídas']);
+          const vlr = parseBrNumber(row['Vlr Saídas']);
+          return qtd > 0 || vlr > 0;
+        });
+      } else if (currentFilterMode === 'no-sales') {
+        dataToShow = fullData.filter(row => {
+          const qtd = parseBrNumber(row['Qtd Saídas']);
+          const vlr = parseBrNumber(row['Vlr Saídas']);
+          return qtd === 0 && vlr === 0;
+        });
+      }
+
+      renderTable(dataToShow);
+    }
+
+    // Constrói tabela compacta para os 4 relatórios de Top/Bottom
+    function buildSummaryTable(rows) {
+      if (!rows || !rows.length) {
+        return '<div class="loading">Sem dados suficientes.</div>';
+      }
+
+      let html = '<table class="summary-table"><thead><tr>';
+      html += '<th>#</th><th>Descrição</th><th>Qtd</th><th>Vlr (R$)</th>';
+      html += '</tr></thead><tbody>';
+
+      rows.forEach((item, idx) => {
+        html += '<tr>';
+        html += `<td>${idx + 1}</td>`;
+        html += `<td>${item['Descrição'] || ''}</td>`;
+        html += `<td class="col-number">${item['Qtd Saídas'] || ''}</td>`;
+        html += `<td class="col-number">${item['Vlr Saídas'] || ''}</td>`;
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      return html;
+    }
+
+    // Atualiza os 4 relatórios (Top/Bottom 10) com base em fullData (sem filtro)
+    function updateSummaries(data) {
+      const containerTopValor = document.getElementById('top-valor');
+      const containerTopQtd = document.getElementById('top-qtd');
+      const containerBottomValor = document.getElementById('bottom-valor');
+      const containerBottomQtd = document.getElementById('bottom-qtd');
+
+      if (!data || !data.length) {
+        containerTopValor.innerHTML =
+          containerTopQtd.innerHTML =
+          containerBottomValor.innerHTML =
+          containerBottomQtd.innerHTML =
+          '<div class="loading">Nenhum dado carregado.</div>';
+        return;
+      }
+
+      // Converte para estrutura com números para ordenar
+      const items = data.map(row => ({
+        row,
+        qtd: parseBrNumber(row['Qtd Saídas']),
+        vlr: parseBrNumber(row['Vlr Saídas'])
+      }));
+
+      // Considera apenas itens com alguma venda (> 0) para Top/Bottom
+      const vendidos = items.filter(i => i.qtd > 0 || i.vlr > 0);
+
+      const topValor = [...vendidos]
+        .sort((a, b) => b.vlr - a.vlr)
+        .slice(0, 10)
+        .map(i => i.row);
+
+      const topQtd = [...vendidos]
+        .sort((a, b) => b.qtd - a.qtd)
+        .slice(0, 10)
+        .map(i => i.row);
+
+      const bottomValor = [...vendidos]
+        .sort((a, b) => a.vlr - b.vlr)
+        .slice(0, 10)
+        .map(i => i.row);
+
+      const bottomQtd = [...vendidos]
+        .sort((a, b) => a.qtd - b.qtd)
+        .slice(0, 10)
+        .map(i => i.row);
+
+      containerTopValor.innerHTML = buildSummaryTable(topValor);
+      containerTopQtd.innerHTML = buildSummaryTable(topQtd);
+      containerBottomValor.innerHTML = buildSummaryTable(bottomValor);
+      containerBottomQtd.innerHTML = buildSummaryTable(bottomQtd);
+    }
+
+    function setActiveMonthButton(monthKey) {
+      monthButtons.forEach(btn => {
+        const isActive = btn.dataset.month === monthKey;
+        btn.classList.toggle('active', isActive);
+      });
+    }
+
     async function loadMonth(monthKey, label) {
       const file = monthFiles[monthKey];
       if (!file) return;
 
-      monthButtons.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.month === monthKey);
-      });
-
+      setActiveMonthButton(monthKey);
       badgeMes.textContent = label;
       tituloMes.textContent = `Relatório de ${label}`;
       statusBar.innerHTML =
@@ -549,7 +738,6 @@
         '<div style="padding: 14px;" class="loading">Carregando dados...</div>';
 
       try {
-        // Leitura via fetch() diretamente do navegador
         const response = await fetch(file);
         if (!response.ok) {
           throw new Error('HTTP ' + response.status);
@@ -571,23 +759,43 @@
             '<span>Role para ver todos os dados.</span>';
         }
 
-        renderTable(results.data || []);
+        fullData = results.data || [];
+        applyFilterAndRender();    // tabela + KPIs respeitando filtro atual
+        updateSummaries(fullData); // 4 relatórios com base em todos os produtos
       } catch (e) {
         console.error(e);
         statusBar.innerHTML =
           '<span class="status-error">Falha ao carregar o arquivo com fetch().</span>' +
-          `<span>Verifique se <code>${file}</code> está na mesma pasta e se o navegador permite leitura local.</span>`;
+          `<span>Verifique se <code>${file}</code> está acessível por HTTP (GitHub Pages ou servidor local).</span>`;
         tableContainer.innerHTML =
           '<div style="padding: 14px;">Não foi possível carregar o arquivo CSV.</div>';
+        fullData = [];
+        updateSummaries(fullData);
       }
     }
 
+    // Clique nos botões de mês
     monthButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const monthKey = btn.dataset.month;
         const label = btn.dataset.label;
         loadMonth(monthKey, label);
       });
+    });
+
+    // Clique no botão de filtro (cicla entre 3 estados)
+    filterButton.addEventListener('click', () => {
+      if (currentFilterMode === 'all') {
+        currentFilterMode = 'with-sales';
+        filterLabel.textContent = 'Mostrando: com saída';
+      } else if (currentFilterMode === 'with-sales') {
+        currentFilterMode = 'no-sales';
+        filterLabel.textContent = 'Mostrando: sem saída';
+      } else {
+        currentFilterMode = 'all';
+        filterLabel.textContent = 'Mostrando: todos';
+      }
+      applyFilterAndRender();
     });
 
     // Carrega Setembro automaticamente ao abrir
@@ -597,3 +805,5 @@
   </script>
 </body>
 </html>
+
+
