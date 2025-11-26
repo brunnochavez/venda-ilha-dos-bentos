@@ -513,6 +513,7 @@
     }
 
     /* Estilos de impressão */
+
     @page {
       size: A4 portrait;
       margin: 12mm;
@@ -567,16 +568,8 @@
         box-shadow: none;
       }
 
-      /* Evitar que um cartão seja cortado no meio da página */
       .summary-card {
         page-break-inside: avoid;
-        break-inside: avoid;
-      }
-
-      /* Forçar o último cartão (10 menos vendidos em quantidade) a iniciar nova página */
-      .summary-card:last-of-type {
-        page-break-before: always;
-        break-before: page;
       }
     }
 
@@ -878,7 +871,7 @@
         html += `<td>${item['Descrição'] || ''}</td>`;
         html += `<td class="col-number">${item['Qtd Saídas'] || ''}</td>`;
         html += `<td class="col-number">${item['Vlr Saídas'] || ''}</td>`;
-        html += '</tr>`;
+        html += '</tr>';
       });
 
       html += '</tbody></table>';
@@ -1024,6 +1017,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
