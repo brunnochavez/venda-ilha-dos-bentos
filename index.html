@@ -58,7 +58,7 @@
     }
 
     header {
-      padding: 20px 24px 16px;
+      padding: 16px 20px;
       border-bottom: 1px solid rgba(148, 163, 184, 0.4);
       display: flex;
       flex-wrap: wrap;
@@ -72,6 +72,8 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      flex: 1;
+      min-width: 220px;
     }
 
     .logo-dot {
@@ -85,14 +87,22 @@
     }
 
     h1 {
-      font-size: 1.35rem;
+      font-size: 1.2rem;
       font-weight: 700;
       letter-spacing: 0.02em;
     }
 
     .subtitle {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: var(--text-muted);
+    }
+
+    .header-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .month-badge {
@@ -115,6 +125,29 @@
       box-shadow: 0 0 0 4px var(--accent-soft);
     }
 
+    .print-btn {
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.4);
+      transition: all 0.18s ease-out;
+      white-space: nowrap;
+    }
+
+    .print-btn:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
     main {
       display: grid;
       grid-template-columns: 260px 1fr;
@@ -123,8 +156,37 @@
     }
 
     @media (max-width: 900px) {
+      body {
+        padding: 12px;
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+
       main {
         grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1rem;
+      }
+
+      .subtitle {
+        font-size: 0.75rem;
+      }
+
+      .print-btn {
+        width: 100%;
+        justify-content: center;
       }
     }
 
@@ -292,6 +354,12 @@
       max-height: 460px;
     }
 
+    @media (max-width: 600px) {
+      .table-wrapper {
+        max-height: none;
+      }
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -443,6 +511,67 @@
     .summary-table td.col-number {
       text-align: right;
     }
+
+    /* Estilos de impressão */
+
+    @page {
+      size: A4 portrait;
+      margin: 12mm;
+    }
+
+    @media print {
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+
+      .app {
+        max-width: 100%;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+      }
+
+      header {
+        border-bottom: 1px solid #ccc;
+      }
+
+      main {
+        display: block;
+        background: #ffffff;
+      }
+
+      .sidebar {
+        display: none !important;
+      }
+
+      .header-right {
+        justify-content: flex-end;
+      }
+
+      .print-btn,
+      .status-bar {
+        display: none !important;
+      }
+
+      .content {
+        padding: 10px 0 0;
+      }
+
+      .table-wrapper {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+
+      thead {
+        position: static;
+        box-shadow: none;
+      }
+
+      .summary-card {
+        page-break-inside: avoid;
+      }
+    }
   </style>
 </head>
 <body>
@@ -455,9 +584,14 @@
           <p class="subtitle">Relatórios em CSV · Setembro a Dezembro</p>
         </div>
       </div>
-      <div class="month-badge" id="badge-mes">
-        <span class="month-dot"></span>
-        <span>Mês selecionado: <strong>—</strong></span>
+      <div class="header-right">
+        <div class="month-badge" id="badge-mes">
+          <span class="month-dot"></span>
+          <span>Mês selecionado: <strong>—</strong></span>
+        </div>
+        <button id="btn-print" class="print-btn" type="button">
+          Imprimir relatório
+        </button>
       </div>
     </header>
 
@@ -824,6 +958,11 @@
       });
     });
 
+    // Botão de impressão
+    document.getElementById('btn-print').addEventListener('click', () => {
+      window.print();
+    });
+
     // Carrega Setembro automaticamente ao abrir
     window.addEventListener('DOMContentLoaded', () => {
       loadMonth('setembro', 'Setembro');
@@ -831,6 +970,7 @@
   </script>
 </body>
 </html>
+
 
 
 
