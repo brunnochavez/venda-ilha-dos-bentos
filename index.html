@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>Relatório de Vendas - CSV</title>
+  <title>Relatório de Vendas Art Pão - Loja Ilha dos Bentos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Fonte moderna -->
@@ -193,16 +193,6 @@
       color: #e5e7eb;
     }
 
-    .hint {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-      padding: 10px 12px;
-      border-radius: 10px;
-      background: #eff6ff;
-      border: 1px dashed rgba(148, 163, 184, 0.9);
-    }
-
     .content {
       padding: 18px 20px 20px;
       display: flex;
@@ -368,7 +358,7 @@
       color: var(--text-muted);
     }
 
-    /* Filtro de saída melhorado */
+    /* Filtro de saída */
 
     .filter-group {
       display: flex;
@@ -461,7 +451,7 @@
       <div class="title-area">
         <div class="logo-dot"></div>
         <div>
-          <h1>Relatório de Vendas</h1>
+          <h1>Relatório de Vendas Art Pão - Loja Ilha dos Bentos</h1>
           <p class="subtitle">Relatórios em CSV · Setembro a Dezembro</p>
         </div>
       </div>
@@ -493,13 +483,6 @@
               <span class="sub">dezembro.csv</span>
             </button>
           </div>
-        </div>
-
-        <div class="hint">
-          Coloque este HTML na mesma pasta que
-          <code>setembro.csv</code>, <code>outubro.csv</code>, <code>novembro.csv</code> e, se desejar,
-          <code>dezembro.csv</code>.  
-          Ao clicar em um mês, o navegador faz <code>fetch()</code> do CSV correspondente.
         </div>
 
         <div>
@@ -646,7 +629,7 @@
         return;
       }
 
-      // Nova ordem / nomes de colunas
+      // Ordem / nomes de colunas: Descrição, Valor de Venda (RS Atual), Qtd Saídas, Subtotal R$ (Vlr Saídas)
       const headers = ['Descrição', 'Valor de Venda', 'Qtd Saídas', 'Subtotal R$'];
 
       let html = '<table><thead><tr>';
@@ -658,9 +641,9 @@
       data.forEach(row => {
         html += '<tr>';
         html += `<td class="col-desc">${row['Descrição'] || ''}</td>`;
-        html += `<td class="col-number">${row['RS Atual'] || ''}</td>`;       // Valor de Venda
-        html += `<td class="col-number">${row['Qtd Saídas'] || ''}</td>`;    // Qtd Saídas
-        html += `<td class="col-number">${row['Vlr Saídas'] || ''}</td>`;    // Subtotal R$
+        html += `<td class="col-number">${row['RS Atual'] || ''}</td>`;
+        html += `<td class="col-number">${row['Qtd Saídas'] || ''}</td>`;
+        html += `<td class="col-number">${row['Vlr Saídas'] || ''}</td>`;
         html += '</tr>';
       });
 
@@ -848,6 +831,7 @@
   </script>
 </body>
 </html>
+
 
 
 
