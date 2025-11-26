@@ -368,6 +368,46 @@
       color: var(--text-muted);
     }
 
+    /* Filtro de saída melhorado */
+
+    .filter-group {
+      display: flex;
+      gap: 6px;
+      background: #ffffff;
+      border-radius: 999px;
+      padding: 4px;
+      border: 1px solid var(--border-soft);
+    }
+
+    .filter-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 6px 8px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.18s ease-out;
+    }
+
+    .filter-btn:hover {
+      background: rgba(37, 99, 235, 0.06);
+      color: var(--text-main);
+    }
+
+    .filter-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .filter-hint {
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
     /* Relatórios adicionais */
 
     .summary-section {
@@ -422,7 +462,7 @@
         <div class="logo-dot"></div>
         <div>
           <h1>Relatório de Vendas</h1>
-          <p class="subtitle">Relatórios em CSV · Setembro a Novembro</p>
+          <p class="subtitle">Relatórios em CSV · Setembro a Dezembro</p>
         </div>
       </div>
       <div class="month-badge" id="badge-mes">
@@ -448,21 +488,28 @@
               <span class="label">Novembro</span>
               <span class="sub">novembro.csv</span>
             </button>
+            <button class="month-btn" data-month="dezembro" data-label="Dezembro">
+              <span class="label">Dezembro</span>
+              <span class="sub">dezembro.csv</span>
+            </button>
           </div>
         </div>
 
         <div class="hint">
           Coloque este HTML na mesma pasta que
-          <code>setembro.csv</code>, <code>outubro.csv</code> e <code>novembro.csv</code>.
+          <code>setembro.csv</code>, <code>outubro.csv</code>, <code>novembro.csv</code> e, se desejar,
+          <code>dezembro.csv</code>.  
           Ao clicar em um mês, o navegador faz <code>fetch()</code> do CSV correspondente.
         </div>
 
         <div>
           <p class="section-title">Filtro de saída</p>
-          <button id="btn-filter" class="month-btn" type="button">
-            <span class="label" id="filter-label">Mostrando: todos</span>
-            <span class="sub">Clique para alternar</span>
-          </button>
+          <div class="filter-group">
+            <button class="filter-btn active" data-filter="all">Todos</button>
+            <button class="filter-btn" data-filter="with-sales">Com saída</button>
+            <button class="filter-btn" data-filter="no-sales">Sem saída</button>
+          </div>
+          <p class="filter-hint">O filtro afeta apenas a tabela principal e os totais acima.</p>
         </div>
       </aside>
 
@@ -535,7 +582,8 @@
     const monthFiles = {
       setembro: 'setembro.csv',
       outubro: 'outubro.csv',
-      novembro: 'novembro.csv'
+      novembro: 'novembro.csv',
+      dezembro: 'dezembro.csv'
     };
 
     const monthButtons = document.querySelectorAll('.month-btn[data-month]');
@@ -549,9 +597,8 @@
     const kpiQtd = document.getElementById('kpi-qtd');
     const kpiVlr = document.getElementById('kpi-vlr');
 
-    // Botão de filtro
-    const filterButton = document.getElementById('btn-filter');
-    const filterLabel = document.getElementById('filter-label');
+    // Botões de filtro
+    const filterButtons = document.querySelectorAll('.filter-btn');
     // modos: 'all' | 'with-sales' | 'no-sales'
     let currentFilterMode = 'all';
 
@@ -599,7 +646,8 @@
         return;
       }
 
-      const headers = ['Descrição', 'Qtd Saídas', 'Vlr Saídas', 'RS Atual'];
+      // Nova ordem / nomes de colunas
+      const headers = ['Descrição', 'Valor de Venda', 'Qtd Saídas', 'Subtotal R$'];
 
       let html = '<table><thead><tr>';
       headers.forEach(h => {
@@ -610,9 +658,9 @@
       data.forEach(row => {
         html += '<tr>';
         html += `<td class="col-desc">${row['Descrição'] || ''}</td>`;
-        html += `<td class="col-number">${row['Qtd Saídas'] || ''}</td>`;
-        html += `<td class="col-number">${row['Vlr Saídas'] || ''}</td>`;
-        html += `<td class="col-number">${row['RS Atual'] || ''}</td>`;
+        html += `<td class="col-number">${row['RS Atual'] || ''}</td>`;       // Valor de Venda
+        html += `<td class="col-number">${row['Qtd Saídas'] || ''}</td>`;    // Qtd Saídas
+        html += `<td class="col-number">${row['Vlr Saídas'] || ''}</td>`;    // Subtotal R$
         html += '</tr>';
       });
 
@@ -783,19 +831,14 @@
       });
     });
 
-    // Clique no botão de filtro (cicla entre 3 estados)
-    filterButton.addEventListener('click', () => {
-      if (currentFilterMode === 'all') {
-        currentFilterMode = 'with-sales';
-        filterLabel.textContent = 'Mostrando: com saída';
-      } else if (currentFilterMode === 'with-sales') {
-        currentFilterMode = 'no-sales';
-        filterLabel.textContent = 'Mostrando: sem saída';
-      } else {
-        currentFilterMode = 'all';
-        filterLabel.textContent = 'Mostrando: todos';
-      }
-      applyFilterAndRender();
+    // Clique nos botões de filtro
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.filter;
+        currentFilterMode = mode;
+        filterButtons.forEach(b => b.classList.toggle('active', b === btn));
+        applyFilterAndRender();
+      });
     });
 
     // Carrega Setembro automaticamente ao abrir
@@ -805,5 +848,7 @@
   </script>
 </body>
 </html>
+
+
 
 
