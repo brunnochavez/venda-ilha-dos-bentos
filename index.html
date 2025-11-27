@@ -5,246 +5,847 @@
   <title>Relatório de Vendas Art Pão - Loja Ilha dos Bentos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <!-- Fonte moderna -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <!-- PapaParse para ler CSV -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
     :root {
+      --bg: #f5f5f7;
+      --bg-card: #ffffff;
       --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+      --accent-strong: rgba(37, 99, 235, 0.16);
       --text-main: #111827;
       --text-muted: #6b7280;
-      --border: #e5e7eb;
+      --border-soft: rgba(148, 163, 184, 0.6);
+      --danger: #dc2626;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f9fafb;
+      background: radial-gradient(circle at top, #e5e7eb 0, #f9fafb 60%, #e5e7eb 100%);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
+      align-items: stretch;
       justify-content: center;
-      padding: 20px;
+      padding: 24px;
     }
 
     .app {
       width: 100%;
-      max-width: 1000px;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      max-width: 1200px;
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow:
+        0 18px 40px rgba(15, 23, 42, 0.08),
+        0 0 0 1px rgba(148, 163, 184, 0.25);
+      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
     header {
       padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
       display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
       justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 10px;
+      background: linear-gradient(to right, #eff6ff, #ffffff);
     }
 
-    h1 { font-size: 1.1rem; font-weight: 700; }
-    .subtitle { font-size: 0.8rem; color: var(--text-muted); }
-
-    .header-title { flex: 1; }
-
-    .header-controls {
+    .title-area {
       display: flex;
-      gap: 10px;
       align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .month-select {
-      padding: 6px 12px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-
-    .print-btn {
-      padding: 6px 14px;
-      border: none;
-      background: var(--accent);
-      color: white;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-    }
-
-    .print-btn:hover { background: #1d4ed8; }
-
-    .content { padding: 16px 20px; }
-
-    .kpi-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    .kpi {
+      gap: 12px;
       flex: 1;
-      min-width: 100px;
-      padding: 8px 12px;
-      background: #f3f4f6;
-      border-radius: 6px;
-      font-size: 0.85rem;
+      min-width: 220px;
     }
 
-    .kpi-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
-    .kpi-value { font-size: 1rem; font-weight: 600; color: var(--accent); margin-top: 2px; }
-
-    .filter-group {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
+    .logo-dot {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 30% 0, #bfdbfe, #2563eb 45%, #1d4ed8 80%);
+      box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.2),
+        0 0 18px rgba(37, 99, 235, 0.4);
     }
 
-    .filter-btn {
-      padding: 6px 12px;
-      border: 1px solid var(--border);
-      background: white;
-      border-radius: 6px;
+    h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
       font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .filter-btn.active {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
-
-    .table-wrapper { overflow: auto; margin-bottom: 12px; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.85rem;
-    }
-
-    thead {
-      background: #f3f4f6;
-      position: sticky;
-      top: 0;
-    }
-
-    th, td { padding: 8px; text-align: left; border-bottom: 1px solid var(--border); }
-
-    th {
-      font-weight: 600;
-      font-size: 0.8rem;
-      text-transform: uppercase;
       color: var(--text-muted);
     }
 
-    tbody tr:nth-child(even) { background: #f9fafb; }
-
-    .col-desc { max-width: 400px; }
-    .col-number { text-align: right; }
-
-    .loading { font-style: italic; color: var(--text-muted); padding: 20px; text-align: center; }
-
-    .status { font-size: 0.75rem; color: var(--text-muted); padding: 8px 0; }
-
-    /* Impressão: COMPACTA e simplificada */
-    @page { size: A4 portrait; margin: 10mm; }
-
-    @media print {
-      body { background: white; padding: 0; }
-      .app { box-shadow: none; border-radius: 0; }
-      header { border-bottom: 1px solid #ccc; page-break-after: avoid; }
-      .header-controls { display: none; }
-      .print-btn, .filter-group, .status { display: none !important; }
-      .content { padding: 8px 10px; }
-      .kpi-row { margin-bottom: 8px; }
-      .kpi { padding: 4px 8px; font-size: 0.75rem; }
-      .kpi-value { font-size: 0.9rem; }
-
-      table { font-size: 0.75rem; }
-      th, td { padding: 4px 6px; }
-      thead { display: table-header-group; }
-      tbody tr { page-break-inside: avoid; }
-
-      h1 { font-size: 0.95rem; }
-      .subtitle { display: none; }
+    .header-right {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
-    /* Mobile: tabela compacta */
-    @media (max-width: 768px) {
+    .month-badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #ffffff;
+    }
+
+    .month-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+
+    .print-btn {
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #ffffff;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.4);
+      transition: all 0.18s ease-out;
+      white-space: nowrap;
+    }
+
+    .print-btn:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+      transform: translateY(-1px);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 500px;
+      background: #f3f4f6;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        padding: 12px;
+      }
+
       header {
         flex-direction: column;
         align-items: flex-start;
       }
 
-      .header-controls { width: 100%; }
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+      }
 
-      .month-select, .print-btn { width: 100%; }
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
 
-      table { font-size: 0.75rem; }
-      th, td { padding: 6px 4px; }
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1rem;
+      }
 
-      .col-desc { max-width: 200px; white-space: normal; }
+      .subtitle {
+        font-size: 0.75rem;
+      }
+
+      .print-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    .sidebar {
+      padding: 20px;
+      border-right: 1px solid rgba(148, 163, 184, 0.3);
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .month-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .month-btn {
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      background: #ffffff;
+      color: var(--text-main);
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.18s ease-out;
+    }
+
+    .month-btn span.label {
+      font-weight: 500;
+    }
+
+    .month-btn span.sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .month-btn:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent-strong), 0 6px 14px rgba(15, 23, 42, 0.08);
+      transform: translateY(-1px);
+    }
+
+    .month-btn.active {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-color: #1d4ed8;
+      box-shadow:
+        0 0 0 1px rgba(37, 99, 235, 0.5),
+        0 10px 22px rgba(37, 99, 235, 0.35);
+      color: #ffffff;
+    }
+
+    .month-btn.active span.sub {
+      color: #e5e7eb;
+    }
+
+    .content {
+      padding: 18px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .content-header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .content-title {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .content-title h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .content-title p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .kpi-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .kpi {
+      min-width: 120px;
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.55);
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .kpi-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .kpi-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .table-card {
+      margin-top: 4px;
+      flex: 1;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: #ffffff;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .table-header {
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f9fafb;
+    }
+
+    .table-header span.badge {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: #ffffff;
+    }
+
+    .table-wrapper {
+      position: relative;
+      overflow: auto;
+      max-height: 460px;
+    }
+
+    @media (max-width: 600px) {
+      .table-wrapper {
+        max-height: none;
+      }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: #f9fafb;
+      box-shadow: 0 1px 0 rgba(148, 163, 184, 0.7);
+    }
+
+    th, td {
+      padding: 8px 10px;
+      white-space: nowrap;
+      border-bottom: 1px solid rgba(229, 231, 235, 1);
+    }
+
+    th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    tbody tr:hover {
+      background: var(--accent-soft);
+    }
+
+    .col-desc {
+      max-width: 380px;
+      white-space: normal;
+    }
+
+    .col-number {
+      text-align: right;
+      font-feature-settings: "tnum" 1, "lnum" 1;
+    }
+
+    .status-bar {
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-top: 1px solid rgba(229, 231, 235, 1);
+      background: #f9fafb;
+    }
+
+    .status-error {
+      color: var(--danger);
+    }
+
+    .loading {
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    /* Filtro de saída */
+
+    .filter-group {
+      display: flex;
+      gap: 6px;
+      background: #ffffff;
+      border-radius: 999px;
+      padding: 4px;
+      border: 1px solid var(--border-soft);
+    }
+
+    .filter-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      padding: 6px 8px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.18s ease-out;
+    }
+
+    .filter-btn:hover {
+      background: rgba(37, 99, 235, 0.06);
+      color: var(--text-main);
+    }
+
+    .filter-btn.active {
+      background: var(--accent);
+      color: #ffffff;
+      box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .filter-hint {
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Relatórios adicionais */
+
+    .summary-section {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .summary-card {
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: #ffffff;
+      padding: 10px 12px 8px;
+    }
+
+    .summary-header {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #111827;
+    }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .summary-table th,
+    .summary-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid rgba(229, 231, 235, 1);
+      white-space: nowrap;
+    }
+
+    .summary-table th {
+      text-align: left;
+      color: #6b7280;
+      font-weight: 600;
+    }
+
+    .summary-table td.col-number {
+      text-align: right;
+    }
+
+    /* IMPRESSÃO: compacta, só tabela principal + KPIs */
+    @page {
+      size: A4 portrait;
+      margin: 8mm;
+    }
+
+    @media print {
+      html, body {
+        height: auto;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      body {
+        background: #ffffff;
+        padding: 0;
+      }
+
+      .app {
+        max-width: 100%;
+        border-radius: 0;
+        border: none;
+        box-shadow: none;
+      }
+
+      header {
+        padding: 8px 10px;
+        border-bottom: 1px solid #999;
+        page-break-after: avoid;
+      }
+
+      .logo-dot {
+        width: 24px;
+        height: 24px;
+      }
+
+      h1 {
+        font-size: 0.95rem;
+      }
+
+      .subtitle {
+        font-size: 0.7rem;
+      }
+
+      main {
+        display: block;
+        background: #ffffff;
+      }
+
+      .sidebar {
+        display: none !important;
+      }
+
+      .header-right {
+        display: none !important;
+      }
+
+      .print-btn,
+      .status-bar,
+      .filter-group,
+      .filter-hint {
+        display: none !important;
+      }
+
+      .content {
+        padding: 6px 8px;
+      }
+
+      .content-header {
+        margin-bottom: 6px;
+      }
+
+      .content-title h2 {
+        font-size: 0.9rem;
+      }
+
+      .content-title p {
+        display: none;
+      }
+
+      .kpi-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+
+      .kpi {
+        padding: 4px 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      .kpi-label {
+        font-size: 0.65rem;
+      }
+
+      .kpi-value {
+        font-size: 0.85rem;
+        color: #111;
+      }
+
+      .table-card {
+        border: none;
+        border-radius: 0;
+      }
+
+      .table-header {
+        display: none !important;
+      }
+
+      .table-wrapper {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+
+      /* Reverter layout mobile para impressão normal */
+      table, thead, tbody, tfoot, tr, th, td {
+        display: table !important;
+      }
+
+      thead {
+        display: table-header-group !important;
+        box-shadow: none;
+        background: #f3f3f3 !important;
+      }
+
+      tfoot {
+        display: table-footer-group !important;
+      }
+
+      td::before {
+        content: none !important;
+      }
+
+      table {
+        font-size: 0.7rem;
+        page-break-inside: auto;
+      }
+
+      th, td {
+        padding: 3px 5px;
+        border-bottom: 1px solid #ddd;
+      }
+
+      th {
+        font-size: 0.68rem;
+        background: #f3f3f3 !important;
+      }
+
+      tbody tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      tbody tr:nth-child(even) {
+        background: #fafafa !important;
+      }
+
+      .col-desc {
+        max-width: none;
+      }
+
+      /* ESCONDER os 4 relatórios de resumo na impressão */
+      .summary-section {
+        display: none !important;
+      }
+    }
+
+    /* Tabela mobile em formato de cartões (sem scroll horizontal) */
+    @media (max-width: 768px) {
+      .table-wrapper {
+        overflow-x: hidden;
+      }
+
+      table,
+      thead,
+      tbody,
+      th,
+      td,
+      tr {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tbody tr {
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(229, 231, 235, 1);
+        background: #ffffff;
+      }
+
+      td {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 6px 10px;
+        white-space: normal;
+      }
+
+      td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        margin-right: 8px;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        font-size: 0.72rem;
+      }
+
+      .col-desc {
+        font-weight: 500;
+      }
     }
   </style>
 </head>
 <body>
   <div class="app">
     <header>
-      <div class="header-title">
-        <h1>Relatório de Vendas Art Pão - Loja Ilha dos Bentos</h1>
-        <p class="subtitle">Relatórios em CSV · Setembro a Dezembro</p>
+      <div class="title-area">
+        <div class="logo-dot"></div>
+        <div>
+          <h1>Relatório de Vendas Art Pão - Loja Ilha dos Bentos</h1>
+          <p class="subtitle">Relatórios em CSV · Setembro a Dezembro</p>
+        </div>
       </div>
-      <div class="header-controls">
-        <select id="month-select" class="month-select">
-          <option value="setembro">Setembro</option>
-          <option value="outubro">Outubro</option>
-          <option value="novembro">Novembro</option>
-          <option value="dezembro">Dezembro</option>
-        </select>
-        <button id="btn-print" class="print-btn">Imprimir</button>
+      <div class="header-right">
+        <div class="month-badge" id="badge-mes">
+          <span class="month-dot"></span>
+          <span>Mês selecionado: <strong>—</strong></span>
+        </div>
+        <button id="btn-print" class="print-btn" type="button">
+          Imprimir relatório
+        </button>
       </div>
     </header>
 
-    <div class="content">
-      <div class="kpi-row">
-        <div class="kpi">
-          <div class="kpi-label">Itens com Vendas</div>
-          <div class="kpi-value" id="kpi-itens">—</div>
+    <main>
+      <aside class="sidebar">
+        <div>
+          <p class="section-title">Meses</p>
+          <div class="month-buttons">
+            <button class="month-btn active" data-month="setembro" data-label="Setembro">
+              <span class="label">Setembro</span>
+              <span class="sub">setembro.csv</span>
+            </button>
+            <button class="month-btn" data-month="outubro" data-label="Outubro">
+              <span class="label">Outubro</span>
+              <span class="sub">outubro.csv</span>
+            </button>
+            <button class="month-btn" data-month="novembro" data-label="Novembro">
+              <span class="label">Novembro</span>
+              <span class="sub">novembro.csv</span>
+            </button>
+            <button class="month-btn" data-month="dezembro" data-label="Dezembro">
+              <span class="label">Dezembro</span>
+              <span class="sub">dezembro.csv</span>
+            </button>
+          </div>
         </div>
-        <div class="kpi">
-          <div class="kpi-label">Total Quantidade</div>
-          <div class="kpi-value" id="kpi-qtd">—</div>
+
+        <div>
+          <p class="section-title">Filtro de saída</p>
+          <div class="filter-group">
+            <button class="filter-btn active" data-filter="all">Todos</button>
+            <button class="filter-btn" data-filter="with-sales">Com saída</button>
+            <button class="filter-btn" data-filter="no-sales">Sem saída</button>
+          </div>
+          <p class="filter-hint">O filtro afeta apenas a tabela principal e os totais acima.</p>
         </div>
-        <div class="kpi">
-          <div class="kpi-label">Total Vendas (R$)</div>
-          <div class="kpi-value" id="kpi-vlr">—</div>
+      </aside>
+
+      <section class="content">
+        <div class="content-header">
+          <div class="content-title">
+            <h2 id="titulo-mes">Relatório de Setembro</h2>
+            <p>Visualização do relatório de vendas para o mês selecionado.</p>
+          </div>
+          <div class="kpi-row">
+            <div class="kpi">
+              <span class="kpi-label">Itens</span>
+              <span class="kpi-value" id="kpi-itens">—</span>
+            </div>
+            <div class="kpi">
+              <span class="kpi-label">Qtd. Total Saídas</span>
+              <span class="kpi-value" id="kpi-qtd">—</span>
+            </div>
+            <div class="kpi">
+              <span class="kpi-label">Total Vendas (R$)</span>
+              <span class="kpi-value" id="kpi-vlr">—</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="filter-group">
-        <button class="filter-btn active" data-filter="all">Todos os produtos</button>
-        <button class="filter-btn" data-filter="with-sales">Com saída</button>
-        <button class="filter-btn" data-filter="no-sales">Sem saída</button>
-      </div>
+        <div class="table-card">
+          <div class="table-header">
+            <span>Relatório detalhado por produto</span>
+            <span class="badge" id="badge-linhas">0 linhas</span>
+          </div>
+          <div class="table-wrapper" id="table-container">
+            <div style="padding: 14px;" class="loading">
+              Carregando dados de setembro...
+            </div>
+          </div>
+          <div class="status-bar" id="status-bar">
+            <span>Pronto.</span>
+            <span>Esperado: "Descrição", "Qtd Saídas", "Vlr Saídas", "RS Atual".</span>
+          </div>
+        </div>
 
-      <div class="table-wrapper" id="table-container">
-        <div class="loading">Carregando...</div>
-      </div>
+        <!-- Relatórios adicionais -->
+        <section class="summary-section">
+          <div class="summary-card">
+            <h3 class="summary-header">10 produtos mais vendidos em valor</h3>
+            <div class="summary-body" id="top-valor"></div>
+          </div>
 
-      <div class="status" id="status">Pronto</div>
-    </div>
+          <div class="summary-card">
+            <h3 class="summary-header">10 produtos mais vendidos em quantidade</h3>
+            <div class="summary-body" id="top-qtd"></div>
+          </div>
+
+          <div class="summary-card">
+            <h3 class="summary-header">10 produtos menos vendidos em valor</h3>
+            <div class="summary-body" id="bottom-valor"></div>
+          </div>
+
+          <div class="summary-card">
+            <h3 class="summary-header">10 produtos menos vendidos em quantidade</h3>
+            <div class="summary-body" id="bottom-qtd"></div>
+          </div>
+        </section>
+      </section>
+    </main>
   </div>
 
   <script>
@@ -255,9 +856,12 @@
       dezembro: 'dezembro.csv'
     };
 
-    const monthSelect = document.getElementById('month-select');
+    const monthButtons = document.querySelectorAll('.month-btn[data-month]');
+    const badgeMes = document.getElementById('badge-mes').querySelector('strong');
+    const tituloMes = document.getElementById('titulo-mes');
     const tableContainer = document.getElementById('table-container');
-    const status = document.getElementById('status');
+    const statusBar = document.getElementById('status-bar');
+    const badgeLinhas = document.getElementById('badge-linhas');
 
     const kpiItens = document.getElementById('kpi-itens');
     const kpiQtd = document.getElementById('kpi-qtd');
@@ -268,7 +872,8 @@
     let fullData = [];
 
     function parseBrNumber(value) {
-      if (!value) return 0;
+      if (value === null || value === undefined || value === '') return 0;
+      if (typeof value === 'number') return value;
       const num = parseFloat(String(value).replace(/\./g, '').replace(',', '.'));
       return isNaN(num) ? 0 : num;
     }
@@ -279,96 +884,217 @@
     }
 
     function updateKPIs(data) {
-      const linhasValidas = data.filter(row => row['Qtd Saídas'] && row['Vlr Saídas']);
-      let somaQtd = 0, somaVlr = 0;
+      const linhasValidas = data.filter(row =>
+        row['Qtd Saídas'] && row['Vlr Saídas']
+      );
+
+      const totalItens = linhasValidas.length;
+      let somaQtd = 0;
+      let somaVlr = 0;
 
       linhasValidas.forEach(row => {
-        somaQtd += parseBrNumber(row['Qtd Saídas']);
-        somaVlr += parseBrNumber(row['Vlr Saídas']);
+        const qtd = parseBrNumber(row['Qtd Saídas']);
+        const vlr = parseBrNumber(row['Vlr Saídas']);
+        somaQtd += qtd;
+        somaVlr += vlr;
       });
 
-      kpiItens.textContent = linhasValidas.length;
+      kpiItens.textContent = totalItens.toLocaleString('pt-BR');
       kpiQtd.textContent = formatNumberBr(somaQtd);
       kpiVlr.textContent = formatNumberBr(somaVlr);
     }
 
     function renderTable(data) {
       if (!data || !data.length) {
-        tableContainer.innerHTML = '<div class="loading">Nenhum dado</div>';
+        tableContainer.innerHTML = '<div style="padding: 14px;">Nenhum dado encontrado neste arquivo.</div>';
+        badgeLinhas.textContent = '0 linhas';
         updateKPIs([]);
         return;
       }
 
+      const headers = ['Descrição', 'Valor de Venda', 'Qtd Saídas', 'Subtotal R$'];
+
       let html = '<table><thead><tr>';
-      html += '<th>Descrição</th>';
-      html += '<th class="col-number">Valor (R$)</th>';
-      html += '<th class="col-number">Qtd Saídas</th>';
-      html += '<th class="col-number">Subtotal (R$)</th>';
+      headers.forEach(h => {
+        html += `<th>${h}</th>`;
+      });
       html += '</tr></thead><tbody>';
 
       data.forEach(row => {
         html += '<tr>';
-        html += `<td class="col-desc">${row['Descrição'] || ''}</td>`;
-        html += `<td class="col-number">${row['RS Atual'] || ''}</td>`;
-        html += `<td class="col-number">${row['Qtd Saídas'] || ''}</td>`;
-        html += `<td class="col-number">${row['Vlr Saídas'] || ''}</td>`;
+        html += `<td class="col-desc" data-label="Descrição">${row['Descrição'] || ''}</td>`;
+        html += `<td class="col-number" data-label="Valor de Venda">${row['RS Atual'] || ''}</td>`;
+        html += `<td class="col-number" data-label="Qtd Saídas">${row['Qtd Saídas'] || ''}</td>`;
+        html += `<td class="col-number" data-label="Subtotal R$">${row['Vlr Saídas'] || ''}</td>`;
         html += '</tr>';
       });
 
       html += '</tbody></table>';
       tableContainer.innerHTML = html;
+      badgeLinhas.textContent = `${data.length} linhas`;
       updateKPIs(data);
-      status.textContent = `${data.length} produtos exibidos`;
     }
 
     function applyFilterAndRender() {
       let dataToShow = fullData;
 
       if (currentFilterMode === 'with-sales') {
-        dataToShow = fullData.filter(row =>
-          parseBrNumber(row['Qtd Saídas']) > 0 || parseBrNumber(row['Vlr Saídas']) > 0
-        );
+        dataToShow = fullData.filter(row => {
+          const qtd = parseBrNumber(row['Qtd Saídas']);
+          const vlr = parseBrNumber(row['Vlr Saídas']);
+          return qtd > 0 || vlr > 0;
+        });
       } else if (currentFilterMode === 'no-sales') {
-        dataToShow = fullData.filter(row =>
-          parseBrNumber(row['Qtd Saídas']) === 0 && parseBrNumber(row['Vlr Saídas']) === 0
-        );
+        dataToShow = fullData.filter(row => {
+          const qtd = parseBrNumber(row['Qtd Saídas']);
+          const vlr = parseBrNumber(row['Vlr Saídas']);
+          return qtd === 0 && vlr === 0;
+        });
       }
 
       renderTable(dataToShow);
     }
 
-    async function loadMonth(monthKey) {
+    function buildSummaryTable(rows) {
+      if (!rows || !rows.length) {
+        return '<div class="loading">Sem dados suficientes.</div>';
+      }
+
+      let html = '<table class="summary-table"><thead><tr>';
+      html += '<th>#</th><th>Descrição</th><th>Qtd</th><th>Vlr (R$)</th>';
+      html += '</tr></thead><tbody>';
+
+      rows.forEach((item, idx) => {
+        html += '<tr>';
+        html += `<td>${idx + 1}</td>`;
+        html += `<td>${item['Descrição'] || ''}</td>`;
+        html += `<td class="col-number">${item['Qtd Saídas'] || ''}</td>`;
+        html += `<td class="col-number">${item['Vlr Saídas'] || ''}</td>`;
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      return html;
+    }
+
+    function updateSummaries(data) {
+      const containerTopValor = document.getElementById('top-valor');
+      const containerTopQtd = document.getElementById('top-qtd');
+      const containerBottomValor = document.getElementById('bottom-valor');
+      const containerBottomQtd = document.getElementById('bottom-qtd');
+
+      if (!data || !data.length) {
+        const msg = '<div class="loading">Nenhum dado carregado.</div>';
+        containerTopValor.innerHTML =
+          containerTopQtd.innerHTML =
+          containerBottomValor.innerHTML =
+          containerBottomQtd.innerHTML = msg;
+        return;
+      }
+
+      const items = data.map(row => ({
+        row,
+        qtd: parseBrNumber(row['Qtd Saídas']),
+        vlr: parseBrNumber(row['Vlr Saídas'])
+      }));
+
+      const vendidos = items.filter(i => i.qtd > 0 || i.vlr > 0);
+
+      const topValor = [...vendidos]
+        .sort((a, b) => b.vlr - a.vlr)
+        .slice(0, 10)
+        .map(i => i.row);
+
+      const topQtd = [...vendidos]
+        .sort((a, b) => b.qtd - a.qtd)
+        .slice(0, 10)
+        .map(i => i.row);
+
+      const bottomValor = [...vendidos]
+        .sort((a, b) => a.vlr - b.vlr)
+        .slice(0, 10)
+        .map(i => i.row);
+
+      const bottomQtd = [...vendidos]
+        .sort((a, b) => a.qtd - b.qtd)
+        .slice(0, 10)
+        .map(i => i.row);
+
+      containerTopValor.innerHTML = buildSummaryTable(topValor);
+      containerTopQtd.innerHTML = buildSummaryTable(topQtd);
+      containerBottomValor.innerHTML = buildSummaryTable(bottomValor);
+      containerBottomQtd.innerHTML = buildSummaryTable(bottomQtd);
+    }
+
+    function setActiveMonthButton(monthKey) {
+      monthButtons.forEach(btn => {
+        const isActive = btn.dataset.month === monthKey;
+        btn.classList.toggle('active', isActive);
+      });
+    }
+
+    async function loadMonth(monthKey, label) {
       const file = monthFiles[monthKey];
       if (!file) return;
 
-      status.textContent = 'Carregando...';
-      tableContainer.innerHTML = '<div class="loading">Aguarde...</div>';
+      setActiveMonthButton(monthKey);
+      badgeMes.textContent = label;
+      tituloMes.textContent = `Relatório de ${label}`;
+      statusBar.innerHTML =
+        `<span class="loading">Carregando arquivo ${file} via fetch()...</span><span></span>`;
+      tableContainer.innerHTML =
+        '<div style="padding: 14px;" class="loading">Carregando dados...</div>';
 
       try {
         const response = await fetch(file);
-        if (!response.ok) throw new Error('HTTP ' + response.status);
+        if (!response.ok) {
+          throw new Error('HTTP ' + response.status);
+        }
 
         const csvText = await response.text();
-        const results = Papa.parse(csvText, { header: true, skipEmptyLines: 'greedy' });
+        const results = Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: 'greedy'
+        });
+
+        if (results.errors && results.errors.length) {
+          statusBar.innerHTML =
+            '<span class="status-error">Erro ao processar o arquivo CSV.</span>' +
+            `<span>Confira o separador e o encoding de de>${file}</code>.</span>`;
+        } else {
+          statusBar.innerHTML =
+            `<span>Arquivo <strong>${file}</strong> carregado com sucesso via fetch().</span>` +
+            '<span>Role para ver todos os dados.</span>';
+        }
 
         fullData = results.data || [];
         applyFilterAndRender();
+        updateSummaries(fullData);
       } catch (e) {
         console.error(e);
-        tableContainer.innerHTML = '<div class="loading">Erro ao carregar arquivo</div>';
-        status.textContent = `Erro ao carregar ${file}`;
+        statusBar.innerHTML =
+          '<span class="status-error">Falha ao carregar o arquivo com fetch().</span>' +
+          `<span>Verifique se de>${file}</code> está acessível por HTTP (GitHub Pages ou servidor local).</span>`;
+        tableContainer.innerHTML =
+          '<div style="padding: 14px;">Não foi possível carregar o arquivo CSV.</div>';
+        fullData = [];
+        updateSummaries(fullData);
       }
     }
 
-    monthSelect.addEventListener('change', (e) => {
-      loadMonth(e.target.value);
+    monthButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const monthKey = btn.dataset.month;
+        const label = btn.dataset.label;
+        loadMonth(monthKey, label);
+      });
     });
 
     filterButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        filterButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentFilterMode = btn.dataset.filter;
+        const mode = btn.dataset.filter;
+        currentFilterMode = mode;
+        filterButtons.forEach(b => b.classList.toggle('active', b === btn));
         applyFilterAndRender();
       });
     });
@@ -377,13 +1103,14 @@
       window.print();
     });
 
-    // Carrega setembro ao abrir
     window.addEventListener('DOMContentLoaded', () => {
-      loadMonth('setembro');
+      loadMonth('setembro', 'Setembro');
     });
   </script>
 </body>
 </html>
+
+
 
 
 
