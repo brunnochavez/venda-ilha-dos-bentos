@@ -512,14 +512,19 @@
       text-align: right;
     }
 
-    /* Estilos de impressão */
-
+    /* Estilos de impressão: A4, cabeçalho fixo, evitar cortes, nova página para último card */
     @page {
       size: A4 portrait;
       margin: 12mm;
-    }
+    } /* [web:118][web:139] */
 
     @media print {
+      html, body {
+        height: auto;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
       body {
         background: #ffffff;
         padding: 0;
@@ -563,14 +568,44 @@
         overflow: visible !important;
       }
 
+      /* volta table layout normal (desfaz layout mobile) */
+      table, thead, tbody, tfoot, tr, th, td {
+        display: table !important;
+      }
+
       thead {
-        position: static;
+        display: table-header-group !important;
         box-shadow: none;
+      } /* [web:132] */
+
+      tfoot {
+        display: table-footer-group !important;
+      }
+
+      td::before {
+        content: none !important;
+      }
+
+      tbody tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
+      } /* [web:129] */
+
+      table,
+      .summary-table {
+        break-inside: avoid;
+        page-break-inside: avoid;
       }
 
       .summary-card {
         page-break-inside: avoid;
+        break-inside: avoid;
       }
+
+      .summary-card:last-of-type {
+        page-break-before: always;
+        break-before: page;
+      } /* [web:123][web:124] */
     }
 
     /* Tabela mobile em formato de cartões (sem scroll horizontal) */
@@ -742,7 +777,6 @@
   </div>
 
   <script>
-    // Mapeamento "mês -> arquivo CSV" na mesma pasta do HTML
     const monthFiles = {
       setembro: 'setembro.csv',
       outubro: 'outubro.csv',
@@ -761,12 +795,8 @@
     const kpiQtd = document.getElementById('kpi-qtd');
     const kpiVlr = document.getElementById('kpi-vlr');
 
-    // Botões de filtro
     const filterButtons = document.querySelectorAll('.filter-btn');
-    // modos: 'all' | 'with-sales' | 'no-sales'
     let currentFilterMode = 'all';
-
-    // Dados do mês carregado (todos os produtos)
     let fullData = [];
 
     function parseBrNumber(value) {
@@ -810,7 +840,6 @@
         return;
       }
 
-      // Ordem / nomes de colunas: Descrição, Valor de Venda (RS Atual), Qtd Saídas, Subtotal R$ (Vlr Saídas)
       const headers = ['Descrição', 'Valor de Venda', 'Qtd Saídas', 'Subtotal R$'];
 
       let html = '<table><thead><tr>';
@@ -834,7 +863,6 @@
       updateKPIs(data);
     }
 
-    // Aplica o filtro de saída sobre fullData e atualiza a tabela/KPIs
     function applyFilterAndRender() {
       let dataToShow = fullData;
 
@@ -855,7 +883,6 @@
       renderTable(dataToShow);
     }
 
-    // Constrói tabela compacta para os 4 relatórios de Top/Bottom
     function buildSummaryTable(rows) {
       if (!rows || !rows.length) {
         return '<div class="loading">Sem dados suficientes.</div>';
@@ -878,7 +905,6 @@
       return html;
     }
 
-    // Atualiza os 4 relatórios (Top/Bottom 10) com base em fullData (sem filtro)
     function updateSummaries(data) {
       const containerTopValor = document.getElementById('top-valor');
       const containerTopQtd = document.getElementById('top-qtd');
@@ -886,22 +912,20 @@
       const containerBottomQtd = document.getElementById('bottom-qtd');
 
       if (!data || !data.length) {
+        const msg = '<div class="loading">Nenhum dado carregado.</div>';
         containerTopValor.innerHTML =
           containerTopQtd.innerHTML =
           containerBottomValor.innerHTML =
-          containerBottomQtd.innerHTML =
-          '<div class="loading">Nenhum dado carregado.</div>';
+          containerBottomQtd.innerHTML = msg;
         return;
       }
 
-      // Converte para estrutura com números para ordenar
       const items = data.map(row => ({
         row,
         qtd: parseBrNumber(row['Qtd Saídas']),
         vlr: parseBrNumber(row['Vlr Saídas'])
       }));
 
-      // Considera apenas itens com alguma venda (> 0) para Top/Bottom
       const vendidos = items.filter(i => i.qtd > 0 || i.vlr > 0);
 
       const topValor = [...vendidos]
@@ -964,7 +988,7 @@
         if (results.errors && results.errors.length) {
           statusBar.innerHTML =
             '<span class="status-error">Erro ao processar o arquivo CSV.</span>' +
-            `<span>Confira o separador e o encoding de <code>${file}</code>.</span>`;
+            `<span>Confira o separador e o encoding de de>${file}</code>.</span>`;
         } else {
           statusBar.innerHTML =
             `<span>Arquivo <strong>${file}</strong> carregado com sucesso via fetch().</span>` +
@@ -972,13 +996,13 @@
         }
 
         fullData = results.data || [];
-        applyFilterAndRender();    // tabela + KPIs respeitando filtro atual
-        updateSummaries(fullData); // 4 relatórios com base em todos os produtos
+        applyFilterAndRender();
+        updateSummaries(fullData);
       } catch (e) {
         console.error(e);
         statusBar.innerHTML =
           '<span class="status-error">Falha ao carregar o arquivo com fetch().</span>' +
-          `<span>Verifique se <code>${file}</code> está acessível por HTTP (GitHub Pages ou servidor local).</span>`;
+          `<span>Verifique se de>${file}</code> está acessível por HTTP (GitHub Pages ou servidor local).</span>`;
         tableContainer.innerHTML =
           '<div style="padding: 14px;">Não foi possível carregar o arquivo CSV.</div>';
         fullData = [];
@@ -986,7 +1010,6 @@
       }
     }
 
-    // Clique nos botões de mês
     monthButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const monthKey = btn.dataset.month;
@@ -995,7 +1018,6 @@
       });
     });
 
-    // Clique nos botões de filtro
     filterButtons.forEach(btn => {
       btn.addEventListener('click', () => {
         const mode = btn.dataset.filter;
@@ -1005,18 +1027,18 @@
       });
     });
 
-    // Botão de impressão
     document.getElementById('btn-print').addEventListener('click', () => {
       window.print();
     });
 
-    // Carrega Setembro automaticamente ao abrir
     window.addEventListener('DOMContentLoaded', () => {
       loadMonth('setembro', 'Setembro');
     });
   </script>
 </body>
 </html>
+
+
 
 
 
